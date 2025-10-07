@@ -80,6 +80,44 @@ def find_most_similar_chunk(query, vector_database, model):
     return 0
 
 
+input("Press Enter to continue... to find top k similar chunks")
+def find_top_k_similar_chunks(query, vector_database, model, k):
+    query_embedding = model.encode(query)
+    similarity_scores = [0.0]
+    similarity_scores_ids = []
+    similarity_scores_chunks = []
+    similarity_scores_embeddings = []
+
+    max_similarity = similarity_scores[0]
+
+    for key, value in vector_database.items():
+        vector = value['embedding']
+        similarity = calculate_cosine_similarity(query_embedding, vector)
+        if len(similarity_scores) < k+1:
+            similarity_scores.append(similarity)
+            similarity_scores_ids.append(key)
+            similarity_scores_chunks.append(value['chunk'])
+            similarity_scores_embeddings.append(vector)
+            similarity_scores.sort(reverse=True)
+        else:
+            if similarity > similarity_scores[-1]:
+                similarity_scores[-1] = similarity
+                similarity_scores_ids[-1] = key
+                similarity_scores_chunks[-1] = value['chunk']
+                similarity_scores_embeddings[-1] = vector
+                similarity_scores.sort(reverse=True)
+            else:
+                pass
+
+    return similarity_scores_ids, similarity_scores_chunks, similarity_scores_embeddings, similarity_scores
+
+ids, chunks, embeddings, similarity_scores = find_top_k_similar_chunks("what is prajeets height?", vector_database, model, 3)
+print(ids)
+print(chunks)
+print(len(embeddings))
+print(similarity_scores)
+input("Press Enter to continue...")
+
 # query = "What is the unique move in kings gambit opening?"
 # similar_chunk, similarity = find_most_similar_chunk(query, vector_database, model)
 # print(f"Most similar chunk: {similar_chunk}")
@@ -118,3 +156,49 @@ def chatbot(query, chat_model):
     return response.choices[0].message
 
 print(chatbot("What is the unique move in kings gambit opening?",  chat_model))
+
+
+'''
+solved top k
+
+def find_top_k_similar_chunks(query, vector_database, model, k):
+    query_embedding = model.encode(query)
+
+    # start empty
+    similarity_scores = []
+    similarity_scores_ids = []
+    similarity_scores_chunks = []
+    similarity_scores_embeddings = []
+
+    for key, value in vector_database.items():
+        vector = value['embedding']
+        similarity = calculate_cosine_similarity(query_embedding, vector)
+
+        # append the first k items directly
+        if len(similarity_scores) < k:
+            similarity_scores.append(similarity)
+            similarity_scores_ids.append(key)
+            similarity_scores_chunks.append(value['chunk'])
+            similarity_scores_embeddings.append(vector)
+
+        else:
+            # check if this similarity is higher than the smallest in the list
+            min_index = similarity_scores.index(min(similarity_scores))
+            if similarity > similarity_scores[min_index]:
+                # replace the lowest score and its corresponding info
+                similarity_scores[min_index] = similarity
+                similarity_scores_ids[min_index] = key
+                similarity_scores_chunks[min_index] = value['chunk']
+                similarity_scores_embeddings[min_index] = vector
+
+    # finally, sort everything by descending similarity to return in order
+    combined = sorted(
+        zip(similarity_scores, similarity_scores_ids, similarity_scores_chunks, similarity_scores_embeddings),
+        reverse=True
+    )
+
+    similarity_scores, similarity_scores_ids, similarity_scores_chunks, similarity_scores_embeddings = zip(*combined)
+
+    return list(similarity_scores_ids), list(similarity_scores_chunks), list(similarity_scores_embeddings), list(similarity_scores)
+
+'''
